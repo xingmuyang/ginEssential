@@ -3,21 +3,13 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"learn/ginEssential/common"
-	"learn/ginEssential/controllers"
+	"learn/ginEssential/routers"
 )
 
-
-
 func main() {
-	r := gin.Default()
 	common.InitDb()
+	r := gin.Default()
+	routers.LoadRouter(r)
 
-	r.POST("/api/auth/register", controllers.Register)
-
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	panic(r.Run())
 }
-
-
-
-
-
