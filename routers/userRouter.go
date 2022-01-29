@@ -11,4 +11,3 @@ func LoadRouter(r *gin.Engine) {
 	r.POST("/api/auth/login", controllers.Login)
 }
 
-
