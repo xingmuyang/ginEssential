@@ -5,8 +5,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"learn/ginEssential/common"
+	"learn/ginEssential/dto"
 	"learn/ginEssential/models"
 	"learn/ginEssential/utils"
+	"log"
 	"net/http"
 )
 
@@ -88,7 +90,14 @@ func Login(ctx *gin.Context) {
 	}
 
 	//返回token
-	ctx.JSON(http.StatusOK, gin.H{"code": "200", "msg": "登录成功"})
+	token, err := common.ReleaseToken(user)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "系统异常"})
+		log.Printf("token generate error : %v", err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"token": token, "msg": "登录成功"})
 
 }
 
@@ -100,5 +109,14 @@ func isExistTelephone(db *gorm.DB, telephone string) bool {
 	}
 
 	return false
+
+}
+
+func UserInfo(ctx *gin.Context)  {
+	user, _ := ctx.Get("user")
+	log.Printf("%T", user)
+
+	ctx.JSON(http.StatusOK, gin.H{"code": 200, "data": gin.H{"user": dto.ToUserDto(user.(models.User))}})
+
 
 }

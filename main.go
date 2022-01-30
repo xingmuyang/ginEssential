@@ -6,10 +6,13 @@ import (
 	"learn/ginEssential/routers"
 )
 
-func main() {
+func init() {
 	common.InitDb()
+
+}
+
+func main() {
 	r := gin.Default()
 	routers.LoadRouter(r)
-
 	panic(r.Run())
 }
