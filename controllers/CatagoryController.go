@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 	"learn/ginEssential/common"
 	"learn/ginEssential/models"
+	"learn/ginEssential/vo"
 	"strconv"
 )
 
@@ -24,12 +25,10 @@ func NewCategoryController() CategoryController {
 
 func (c CategoryController) Create(ctx *gin.Context) {
 	//绑定body中的参数
-	var requestCategory models.Category
-	ctx.Bind(&requestCategory)
+	var requestCategory vo.CreateCategoryRequest
 
-	//数据校验
-	if requestCategory.Name == "" {
-		common.Fail(ctx, nil, "数据验证错误，分类名称必填")
+	if err := ctx.ShouldBind(&requestCategory); err != nil {
+		common.Fail(ctx, nil, "数据验证错误")
 		return
 	}
 
@@ -42,12 +41,10 @@ func (c CategoryController) Create(ctx *gin.Context) {
 
 func (c CategoryController) Update(ctx *gin.Context) {
 	//绑定body 参数
-	var requestCategory models.Category
-	ctx.Bind(&requestCategory)
+	var requestCategory vo.CreateCategoryRequest
 
-	//数据校验
-	if requestCategory.Name == "" {
-		common.Fail(ctx, nil, "数据验证错误，分类名称必填")
+	if err := ctx.ShouldBind(&requestCategory); err != nil {
+		common.Fail(ctx, nil, "数据验证错误")
 		return
 	}
 
