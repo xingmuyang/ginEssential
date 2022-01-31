@@ -21,12 +21,12 @@ func Register(ctx *gin.Context) {
 
 	//数据校验
 	if len(telephone) != 11 {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "手机号必须为11位"})
+		common.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "手机号必须为11位")
 		return
 	}
 
 	if len(password) <= 6 {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "密码必须大于等于6位"})
+		common.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "密码必须大于等于6位")
 		return
 	}
 
@@ -36,7 +36,7 @@ func Register(ctx *gin.Context) {
 
 	//查询手机号
 	if isExistTelephone(DB, telephone) {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "用户已注册"})
+		common.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "用户已注册")
 		return
 	}
 
@@ -44,7 +44,7 @@ func Register(ctx *gin.Context) {
 
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "加密失败"})
+		common.Response(ctx, http.StatusInternalServerError, 500, nil, "加密失败")
 		return
 	}
 	newUser := models.User{
@@ -53,8 +53,16 @@ func Register(ctx *gin.Context) {
 		Password:  string(hashPassword),
 	}
 	DB.Create(&newUser)
+	// 发放token
+	token, err := common.ReleaseToken(newUser)
+	if err != nil {
+		common.Response(ctx, http.StatusInternalServerError, 500, nil, "系统异常")
+		log.Printf("token generate error : %v", err)
+		return
+	}
 
-	ctx.JSON(http.StatusOK, gin.H{"code": "200", "msg": "创建用户成功！"})
+	// 返回结果
+	common.Success(ctx, gin.H{"token": token}, "注册成功")
 
 }
 
@@ -66,12 +74,12 @@ func Login(ctx *gin.Context) {
 
 	//数据校验
 	if len(telephone) != 11 {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "手机号必须为11位"})
+		common.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "手机号必须为11位")
 		return
 	}
 
 	if len(password) <= 6 {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "密码必须大于等于6位"})
+		common.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "密码必须大于等于6位")
 		return
 	}
 
@@ -79,25 +87,27 @@ func Login(ctx *gin.Context) {
 	var user models.User
 	DB.Where("telephone = ?", telephone).First(&user)
 	if user.ID == 0 {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"code": 422, "msg": "用户存在"})
+		common.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "用户已存在")
 		return
 	}
 
 	//密码校验
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": "密码错误"})
+		common.Response(ctx, http.StatusBadRequest, 400, nil, "密码错误")
 		return
 	}
 
-	//返回token
+
+	// 发放token
 	token, err := common.ReleaseToken(user)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "系统异常"})
+		common.Response(ctx, http.StatusInternalServerError, 500, nil, "系统异常")
 		log.Printf("token generate error : %v", err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"token": token, "msg": "登录成功"})
+	// 返回结果
+	common.Success(ctx, gin.H{"token": token}, "登录成功")
 
 }
 
@@ -112,11 +122,10 @@ func isExistTelephone(db *gorm.DB, telephone string) bool {
 
 }
 
-func UserInfo(ctx *gin.Context)  {
+func UserInfo(ctx *gin.Context) {
 	user, _ := ctx.Get("user")
 	log.Printf("%T", user)
 
-	ctx.JSON(http.StatusOK, gin.H{"code": 200, "data": gin.H{"user": dto.ToUserDto(user.(models.User))}})
-
+	common.Success(ctx, gin.H{"user": dto.ToUserDto(user.(models.User))}, "获取用户信息成功")
 
 }
